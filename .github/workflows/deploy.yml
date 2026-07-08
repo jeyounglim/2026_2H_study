@@ -1,0 +1,31 @@
+name: Deploy
+
+# main 브랜치 push 시 클라우드 서버(SSH)로 접속해 docker compose 로 재배포한다.
+# 사용 전 저장소 Settings > Secrets 에 아래 값을 등록해야 한다:
+#   SSH_HOST, SSH_USER, SSH_KEY, DEPLOY_PATH
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    # Secrets 미설정 시 워크플로가 실패하지 않도록 가드
+    if: ${{ github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main' }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.SSH_HOST }}
+          username: ${{ secrets.SSH_USER }}
+          key: ${{ secrets.SSH_KEY }}
+          script: |
+            set -e
+            cd ${{ secrets.DEPLOY_PATH }}
+            git pull origin main
+            docker compose pull || true
+            docker compose up -d --build
+            docker image prune -f
