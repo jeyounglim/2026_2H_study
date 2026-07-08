@@ -14,10 +14,18 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'Board - FullStack Study',
+      title: 'Newsroom — Board Study',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
+        { name: 'description', content: '최신 게시글과 업데이트를 확인하세요.' },
+      ],
+      link: [
+        { rel: 'preconnect', href: 'https://cdn.jsdelivr.net', crossorigin: '' },
+        {
+          rel: 'stylesheet',
+          href: 'https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css',
+        },
       ],
     },
   },

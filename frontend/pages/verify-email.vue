@@ -26,12 +26,12 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="card" style="max-width: 440px; margin: 40px auto; text-align: center">
+  <div class="auth-card card" style="text-align: center">
     <h1 class="title">이메일 인증</h1>
-    <p v-if="status === 'loading'" class="muted">인증 처리 중입니다...</p>
+    <p v-if="status === 'loading'" class="loading-state">인증 처리 중입니다...</p>
     <p v-else-if="status === 'success'" class="success">{{ message }}</p>
     <p v-else class="error">{{ message }}</p>
-    <NuxtLink v-if="status !== 'loading'" to="/login" class="btn" style="margin-top: 16px">
+    <NuxtLink v-if="status !== 'loading'" to="/login" class="btn" style="margin-top: 24px">
       로그인 하러 가기
     </NuxtLink>
   </div>

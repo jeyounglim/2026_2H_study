@@ -89,38 +89,40 @@ async function removePost() {
 </script>
 
 <template>
-  <div class="stack">
-    <div v-if="error" class="card">
-      <p class="error">게시글을 찾을 수 없습니다.</p>
-      <NuxtLink to="/posts" class="btn btn-outline btn-sm">목록으로</NuxtLink>
+  <div>
+    <NuxtLink to="/posts" class="back-link">← Newsroom</NuxtLink>
+
+    <div v-if="error" class="empty-state">
+      <p>게시글을 찾을 수 없습니다.</p>
+      <NuxtLink to="/posts" class="btn btn-outline btn-sm" style="margin-top: 16px">목록으로</NuxtLink>
     </div>
 
     <template v-else-if="post">
-      <div class="card">
-        <div class="row-between">
-          <h1 class="title" style="margin: 0">{{ post.title }}</h1>
-          <div v-if="isAuthor" style="display: flex; gap: 8px">
-            <NuxtLink :to="`/posts/${post.id}/edit`" class="btn btn-outline btn-sm">수정</NuxtLink>
-            <button class="btn btn-danger btn-sm" @click="removePost">삭제</button>
+      <article class="article-detail">
+        <header class="article-detail-header">
+          <h1 class="article-detail-title">{{ post.title }}</h1>
+          <div class="article-detail-meta">
+            {{ post.author.nickname }} · {{ formatDate(post.createdAt) }}
           </div>
-        </div>
-        <div class="muted" style="margin: 8px 0 16px">
-          {{ post.author.nickname }} · {{ formatDate(post.createdAt) }}
-        </div>
-        <div class="content-body">{{ post.content }}</div>
-      </div>
+          <div v-if="isAuthor" class="article-actions">
+            <NuxtLink :to="`/posts/${post.id}/edit`" class="btn btn-sm btn-outline">수정</NuxtLink>
+            <button class="btn btn-sm btn-danger" @click="removePost">삭제</button>
+          </div>
+        </header>
+        <div class="article-detail-body">{{ post.content }}</div>
+      </article>
 
-      <div class="card">
-        <h2 style="font-size: 17px; margin: 0 0 12px">댓글 {{ comments.length }}</h2>
+      <section class="comments-section">
+        <h2 class="comments-heading">댓글 {{ comments.length }}</h2>
 
-        <div v-if="auth.isLoggedIn" style="margin-bottom: 16px">
+        <div v-if="auth.isLoggedIn" style="margin-bottom: 24px">
           <textarea
             v-model="newComment"
             class="textarea"
-            style="min-height: 70px"
+            style="min-height: 80px"
             placeholder="댓글을 입력하세요"
           />
-          <div class="row-between" style="margin-top: 8px">
+          <div class="row-between" style="margin-top: 12px">
             <span class="error">{{ commentError }}</span>
             <button class="btn btn-sm" :disabled="submitting || !newComment.trim()" @click="addComment">
               댓글 작성
@@ -128,47 +130,40 @@ async function removePost() {
           </div>
         </div>
         <p v-else class="muted">
-          댓글을 작성하려면 <NuxtLink to="/login" style="color: var(--primary)">로그인</NuxtLink>하세요.
+          댓글을 작성하려면 <NuxtLink to="/login" class="text-link">로그인</NuxtLink>하세요.
         </p>
 
-        <div v-if="comments.length === 0" class="muted">첫 댓글을 남겨보세요.</div>
+        <p v-if="comments.length === 0" class="muted" style="padding: 24px 0">첫 댓글을 남겨보세요.</p>
+
         <div v-for="c in comments" :key="c.id" class="comment">
           <div class="row-between">
-            <span style="font-weight: 600; font-size: 14px">{{ c.author.nickname }}</span>
-            <div v-if="auth.user?.id === c.authorId" style="display: flex; gap: 6px">
+            <span class="comment-author">{{ c.author.nickname }}</span>
+            <div v-if="auth.user?.id === c.authorId" class="comment-actions">
               <button
                 v-if="editingCommentId !== c.id"
-                class="btn btn-outline btn-sm"
+                class="btn btn-sm btn-ghost"
                 @click="startEditComment(c)"
               >
                 수정
               </button>
-              <button class="btn btn-danger btn-sm" @click="removeComment(c.id)">삭제</button>
+              <button class="btn btn-sm btn-danger" @click="removeComment(c.id)">삭제</button>
             </div>
           </div>
-          <div v-if="editingCommentId === c.id" style="margin: 8px 0">
+          <div v-if="editingCommentId === c.id" style="margin-top: 12px">
             <textarea v-model="editingContent" class="textarea" style="min-height: 60px" />
             <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end">
-              <button class="btn btn-outline btn-sm" @click="cancelEditComment">취소</button>
-              <button
-                class="btn btn-sm"
-                :disabled="!editingContent.trim()"
-                @click="saveEditComment(c.id)"
-              >
+              <button class="btn btn-sm btn-ghost" @click="cancelEditComment">취소</button>
+              <button class="btn btn-sm" :disabled="!editingContent.trim()" @click="saveEditComment(c.id)">
                 저장
               </button>
             </div>
           </div>
           <template v-else>
-            <div class="content-body" style="margin: 4px 0">{{ c.content }}</div>
-            <div class="muted">{{ formatDate(c.createdAt) }}</div>
+            <div class="comment-body">{{ c.content }}</div>
+            <div class="comment-date">{{ formatDate(c.createdAt) }}</div>
           </template>
         </div>
-      </div>
-
-      <NuxtLink to="/posts" class="btn btn-outline btn-sm" style="align-self: flex-start">
-        목록으로
-      </NuxtLink>
+      </section>
     </template>
   </div>
 </template>

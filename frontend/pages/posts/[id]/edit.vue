@@ -17,7 +17,6 @@ const content = ref(data.value?.data.content ?? '');
 const error = ref('');
 const loading = ref(false);
 
-// 본인 글이 아니면 상세로 돌려보냄
 if (data.value && auth.user?.id !== data.value.data.authorId) {
   await navigateTo(`/posts/${postId.value}`);
 }
@@ -40,7 +39,8 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="card">
+  <div class="form-card card">
+    <NuxtLink :to="`/posts/${postId}`" class="back-link">← 게시글로</NuxtLink>
     <h1 class="title">글 수정</h1>
     <form @submit.prevent="onSubmit">
       <div class="field">
@@ -52,8 +52,8 @@ async function onSubmit() {
         <textarea v-model="content" class="textarea" required />
       </div>
       <div class="row-between">
-        <NuxtLink :to="`/posts/${postId}`" class="btn btn-outline btn-sm">취소</NuxtLink>
-        <button class="btn" :disabled="loading">{{ loading ? '저장 중...' : '수정' }}</button>
+        <NuxtLink :to="`/posts/${postId}`" class="btn btn-ghost">취소</NuxtLink>
+        <button class="btn" :disabled="loading">{{ loading ? '저장 중...' : '저장' }}</button>
       </div>
       <p v-if="error" class="error">{{ error }}</p>
     </form>

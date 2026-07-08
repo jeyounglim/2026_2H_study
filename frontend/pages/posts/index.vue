@@ -8,7 +8,7 @@ const api = useApi();
 const page = computed(() => Number(route.query.page) || 1);
 const search = ref((route.query.search as string) || '');
 
-const { data, pending, refresh } = await useAsyncData(
+const { data, pending } = await useAsyncData(
   'posts',
   () =>
     api<Paginated<Post>>('/posts', {
@@ -28,33 +28,40 @@ function onSearch() {
 
 <template>
   <div>
-    <div class="row-between" style="margin-bottom: 16px">
-      <h1 class="title" style="margin: 0">게시판</h1>
-      <form style="display: flex; gap: 8px" @submit.prevent="onSearch">
-        <input v-model="search" class="input" placeholder="검색어" style="width: 180px" />
-        <button class="btn btn-outline btn-sm" type="submit">검색</button>
+    <header class="hero">
+      <p class="hero-eyebrow">Board</p>
+      <h1 class="hero-title">Newsroom</h1>
+      <p class="hero-subtitle">
+        최신 게시글과 업데이트를 확인하세요.
+      </p>
+    </header>
+
+    <div class="section-header">
+      <h2 class="section-title">최근 게시글</h2>
+      <form class="search-form" @submit.prevent="onSearch">
+        <input v-model="search" class="search-input" placeholder="검색" />
+        <button class="btn btn-sm btn-outline" type="submit">검색</button>
       </form>
     </div>
 
-    <div class="card">
-      <p v-if="pending" class="muted">불러오는 중...</p>
-      <p v-else-if="!data || data.data.length === 0" class="muted">게시글이 없습니다.</p>
+    <p v-if="pending" class="loading-state">불러오는 중...</p>
+    <p v-else-if="!data || data.data.length === 0" class="empty-state">게시글이 없습니다.</p>
 
-      <div v-else>
-        <div v-for="post in data.data" :key="post.id" class="post-item">
-          <NuxtLink :to="`/posts/${post.id}`">
-            <h3>{{ post.title }}</h3>
-          </NuxtLink>
-          <div class="muted">
-            {{ post.author.nickname }} · {{ formatDate(post.createdAt) }} · 댓글
-            {{ post._count?.comments ?? 0 }}
+    <ul v-else class="article-list">
+      <li v-for="post in data.data" :key="post.id" class="article-item">
+        <NuxtLink :to="`/posts/${post.id}`" class="article-link">
+          <h3 class="article-title">{{ post.title }}</h3>
+          <div class="article-meta">
+            <span>{{ post.author.nickname }}</span>
+            <span>{{ formatDate(post.createdAt) }}</span>
+            <span>댓글 {{ post._count?.comments ?? 0 }}</span>
           </div>
-        </div>
-      </div>
-    </div>
+        </NuxtLink>
+      </li>
+    </ul>
 
     <div v-if="data && data.pagination.totalPages > 1" class="pagination">
-      <button :disabled="page <= 1" @click="goPage(page - 1)">이전</button>
+      <button :disabled="page <= 1" @click="goPage(page - 1)">‹</button>
       <button
         v-for="p in data.pagination.totalPages"
         :key="p"
@@ -63,7 +70,7 @@ function onSearch() {
       >
         {{ p }}
       </button>
-      <button :disabled="!data.pagination.hasNext" @click="goPage(page + 1)">다음</button>
+      <button :disabled="!data.pagination.hasNext" @click="goPage(page + 1)">›</button>
     </div>
   </div>
 </template>

@@ -23,8 +23,10 @@ async function onSubmit() {
 </script>
 
 <template>
-  <div class="card" style="max-width: 420px; margin: 40px auto">
-    <h1 class="title">로그인</h1>
+  <div class="auth-card card">
+    <h1 class="title" style="text-align: center; margin-bottom: 8px">로그인</h1>
+    <p class="muted" style="text-align: center; margin-bottom: 32px">계정에 로그인하세요.</p>
+
     <form @submit.prevent="onSubmit">
       <div class="field">
         <label>이메일</label>
@@ -37,10 +39,12 @@ async function onSubmit() {
       <button class="btn" style="width: 100%" :disabled="loading">
         {{ loading ? '로그인 중...' : '로그인' }}
       </button>
-      <p v-if="error" class="error">{{ error }}</p>
+      <p v-if="error" class="error" style="text-align: center">{{ error }}</p>
     </form>
-    <p class="muted" style="margin-top: 16px; text-align: center">
-      계정이 없으신가요? <NuxtLink to="/register" style="color: var(--primary)">회원가입</NuxtLink>
+
+    <p class="muted" style="margin-top: 24px; text-align: center">
+      계정이 없으신가요?
+      <NuxtLink to="/register" class="text-link">회원가입</NuxtLink>
     </p>
   </div>
 </template>
