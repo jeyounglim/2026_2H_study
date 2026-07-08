@@ -32,10 +32,31 @@ export const createComment = asyncHandler(async (req, res) => {
   }
 
   const comment = await prisma.comment.create({
-    data: { content, postId, authorId: req.user.id },
+    data: { content, postId, authorId: req.user.id, updatedAt: new Date() },
     include: { author: { select: authorSelect } },
   });
   res.status(201).json({ message: '댓글이 작성되었습니다.', data: comment });
+});
+
+// PUT /comments/:id  (본인만)
+export const updateComment = asyncHandler(async (req, res) => {
+  const id = Number(req.params.id);
+  const { content } = req.body;
+
+  const existing = await prisma.comment.findUnique({ where: { id } });
+  if (!existing) {
+    throw notFound('댓글을 찾을 수 없습니다.');
+  }
+  if (existing.authorId !== req.user.id) {
+    throw forbidden('본인이 작성한 댓글만 수정할 수 있습니다.');
+  }
+
+  const comment = await prisma.comment.update({
+    where: { id },
+    data: { content },
+    include: { author: { select: authorSelect } },
+  });
+  res.json({ message: '댓글이 수정되었습니다.', data: comment });
 });
 
 // DELETE /comments/:id  (본인만)

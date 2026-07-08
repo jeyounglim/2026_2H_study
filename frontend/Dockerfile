@@ -5,6 +5,9 @@ WORKDIR /app
 COPY package*.json ./
 RUN npm ci || npm install
 COPY . .
+
+ARG NUXT_PUBLIC_API_BASE=http://localhost:4000/api
+ENV NUXT_PUBLIC_API_BASE=$NUXT_PUBLIC_API_BASE
 RUN npm run build
 
 # ---- runtime ----

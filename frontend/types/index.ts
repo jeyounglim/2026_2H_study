@@ -21,6 +21,7 @@ export interface Comment {
   authorId: number;
   author: Author;
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface Pagination {
