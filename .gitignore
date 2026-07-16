@@ -38,3 +38,7 @@ Thumbs.db
 # misc
 coverage/
 *.local
+
+# uploaded files
+backend/uploads/avatars/*
+!backend/uploads/avatars/.gitkeep

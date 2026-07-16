@@ -1,6 +1,7 @@
 export interface Author {
   id: number;
   nickname: string;
+  profileImage?: string | null;
 }
 
 export interface Post {
@@ -19,9 +20,11 @@ export interface Comment {
   content: string;
   postId: number;
   authorId: number;
+  parentId?: number | null;
   author: Author;
   createdAt: string;
   updatedAt: string;
+  replies?: Comment[];
 }
 
 export interface Pagination {

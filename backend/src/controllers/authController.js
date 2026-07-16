@@ -1,4 +1,6 @@
 import crypto from 'node:crypto';
+import fs from 'node:fs';
+import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
 import { signAccessToken } from '../lib/jwt.js';
@@ -10,9 +12,16 @@ const publicUser = (user) => ({
   id: user.id,
   email: user.email,
   nickname: user.nickname,
+  profileImage: user.profileImage,
   isVerified: user.isVerified,
   createdAt: user.createdAt,
 });
+
+function removeLocalUpload(fileUrl) {
+  if (!fileUrl || !fileUrl.startsWith('/uploads/')) return;
+  const absolute = path.resolve(`.${fileUrl}`);
+  fs.promises.unlink(absolute).catch(() => {});
+}
 
 // POST /auth/register
 export const register = asyncHandler(async (req, res) => {
@@ -97,4 +106,68 @@ export const me = asyncHandler(async (req, res) => {
     throw notFound('사용자를 찾을 수 없습니다.');
   }
   res.json({ user: publicUser(user) });
+});
+
+// POST /auth/profile-image  (인증 필요, multipart)
+export const uploadProfileImage = asyncHandler(async (req, res) => {
+  if (!req.file) {
+    throw badRequest('이미지 파일을 선택해주세요.');
+  }
+
+  const profileImage = `/uploads/avatars/${req.file.filename}`;
+  const existing = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!existing) {
+    removeLocalUpload(profileImage);
+    throw notFound('사용자를 찾을 수 없습니다.');
+  }
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { profileImage },
+  });
+
+  if (existing.profileImage && existing.profileImage !== profileImage) {
+    removeLocalUpload(existing.profileImage);
+  }
+
+  res.json({ message: '프로필 이미지가 등록되었습니다.', user: publicUser(user) });
+});
+
+// PATCH /auth/me  (닉네임 수정)
+export const updateProfile = asyncHandler(async (req, res) => {
+  const { nickname } = req.body;
+
+  const user = await prisma.user.update({
+    where: { id: req.user.id },
+    data: { nickname },
+  });
+
+  res.json({ message: '프로필이 수정되었습니다.', user: publicUser(user) });
+});
+
+// PATCH /auth/password  (비밀번호 변경)
+export const changePassword = asyncHandler(async (req, res) => {
+  const { currentPassword, newPassword } = req.body;
+
+  const existing = await prisma.user.findUnique({ where: { id: req.user.id } });
+  if (!existing) {
+    throw notFound('사용자를 찾을 수 없습니다.');
+  }
+
+  const ok = await bcrypt.compare(currentPassword, existing.password);
+  if (!ok) {
+    throw badRequest('현재 비밀번호가 올바르지 않습니다.');
+  }
+
+  if (currentPassword === newPassword) {
+    throw badRequest('새 비밀번호는 현재 비밀번호와 달라야 합니다.');
+  }
+
+  const hashed = await bcrypt.hash(newPassword, 10);
+  await prisma.user.update({
+    where: { id: req.user.id },
+    data: { password: hashed },
+  });
+
+  res.json({ message: '비밀번호가 변경되었습니다.' });
 });

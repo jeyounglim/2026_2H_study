@@ -1,3 +1,4 @@
+import multer from 'multer';
 import { ZodError } from 'zod';
 import { ApiError } from '../utils/ApiError.js';
 
@@ -14,6 +15,13 @@ export function errorHandler(err, req, res, next) {
       message: '입력값이 올바르지 않습니다.',
       errors: err.errors.map((e) => ({ field: e.path.join('.'), message: e.message })),
     });
+  }
+
+  if (err instanceof multer.MulterError) {
+    if (err.code === 'LIMIT_FILE_SIZE') {
+      return res.status(400).json({ message: '이미지 크기는 2MB 이하여야 합니다.' });
+    }
+    return res.status(400).json({ message: err.message });
   }
 
   if (err instanceof ApiError) {

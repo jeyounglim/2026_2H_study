@@ -4,6 +4,7 @@ export interface AuthUser {
   id: number;
   email: string;
   nickname: string;
+  profileImage?: string | null;
   isVerified: boolean;
   createdAt: string;
 }
@@ -52,10 +53,51 @@ export const useAuthStore = defineStore('auth', () => {
     }
   }
 
+  async function uploadProfileImage(file: File) {
+    const api = useApi();
+    const body = new FormData();
+    body.append('image', file);
+    const res = await api<{ message: string; user: AuthUser }>('/auth/profile-image', {
+      method: 'POST',
+      body,
+    });
+    user.value = res.user;
+    return res;
+  }
+
+  async function updateProfile(nickname: string) {
+    const api = useApi();
+    const res = await api<{ message: string; user: AuthUser }>('/auth/me', {
+      method: 'PATCH',
+      body: { nickname },
+    });
+    user.value = res.user;
+    return res;
+  }
+
+  async function changePassword(currentPassword: string, newPassword: string) {
+    const api = useApi();
+    return api<{ message: string }>('/auth/password', {
+      method: 'PATCH',
+      body: { currentPassword, newPassword },
+    });
+  }
+
   function logout() {
     token.value = null;
     user.value = null;
   }
 
-  return { user, token, isLoggedIn, login, register, fetchMe, logout };
+  return {
+    user,
+    token,
+    isLoggedIn,
+    login,
+    register,
+    fetchMe,
+    uploadProfileImage,
+    updateProfile,
+    changePassword,
+    logout,
+  };
 });

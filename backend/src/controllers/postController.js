@@ -2,7 +2,7 @@ import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { forbidden, notFound } from '../utils/ApiError.js';
 
-const authorSelect = { id: true, nickname: true };
+const authorSelect = { id: true, nickname: true, profileImage: true };
 
 // GET /posts?page=1&limit=10  (페이징)
 export const listPosts = asyncHandler(async (req, res) => {
@@ -11,10 +11,13 @@ export const listPosts = asyncHandler(async (req, res) => {
   const skip = (page - 1) * limit;
 
   const search = (req.query.search || '').toString().trim();
-  const where = search
-    ? { OR: [{ title: { contains: search } }, { content: { contains: search } }] }
-    : {};
-
+  const authorId = Number(req.query.authorId);
+  const where = {
+    ...(search
+      ? { OR: [{ title: { contains: search } }, { content: { contains: search } }] }
+      : {}),
+    ...(Number.isInteger(authorId) && authorId > 0 ? { authorId } : {}),
+  };
   const [total, posts] = await Promise.all([
     prisma.post.count({ where }),
     prisma.post.findMany({

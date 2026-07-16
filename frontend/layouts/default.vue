@@ -16,12 +16,18 @@ async function handleLogout() {
   <div class="page">
     <header class="navbar">
       <div class="navbar-inner">
-        <NuxtLink to="/posts" class="brand">Newsroom</NuxtLink>
+        <NuxtLink to="/posts" class="brand">Study</NuxtLink>
         <nav class="nav-links">
           <NuxtLink to="/posts" class="nav-link">게시판</NuxtLink>
           <template v-if="auth.isLoggedIn">
-            <span class="nav-user">{{ auth.user?.nickname }}</span>
-            <NuxtLink to="/posts/new" class="nav-link">글쓰기</NuxtLink>
+            <NuxtLink to="/mypage" class="nav-avatar-link" title="마이페이지">
+              <UserAvatar
+                size="sm"
+                :email="auth.user?.email"
+                :nickname="auth.user?.nickname"
+                :profile-image="auth.user?.profileImage"
+              />
+            </NuxtLink>
             <button class="btn-ghost btn-sm" @click="handleLogout">로그아웃</button>
           </template>
           <template v-else>

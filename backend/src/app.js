@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'node:path';
 import swaggerUi from 'swagger-ui-express';
 
 import { config } from './config/env.js';
@@ -14,6 +15,7 @@ export function createApp() {
 
   app.use(cors({ origin: config.clientUrl, credentials: true }));
   app.use(express.json());
+  app.use('/uploads', express.static(path.resolve('uploads')));
 
   app.get('/health', (req, res) => res.json({ status: 'ok' }));
 

@@ -1,8 +1,22 @@
 import { Router } from 'express';
-import { register, verifyEmail, login, me } from '../controllers/authController.js';
+import {
+  register,
+  verifyEmail,
+  login,
+  me,
+  uploadProfileImage,
+  updateProfile,
+  changePassword,
+} from '../controllers/authController.js';
 import { authRequired } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
-import { registerSchema, loginSchema } from '../validators/schemas.js';
+import { avatarUpload } from '../middleware/upload.js';
+import {
+  registerSchema,
+  loginSchema,
+  updateProfileSchema,
+  changePasswordSchema,
+} from '../validators/schemas.js';
 
 const router = Router();
 
@@ -80,5 +94,79 @@ router.post('/login', validateBody(loginSchema), login);
  *       401: { description: 인증 필요 }
  */
 router.get('/me', authRequired, me);
+
+/**
+ * @openapi
+ * /auth/me:
+ *   patch:
+ *     tags: [Auth]
+ *     summary: 프로필(닉네임) 수정
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [nickname]
+ *             properties:
+ *               nickname: { type: string }
+ *     responses:
+ *       200: { description: 수정 성공 }
+ *       401: { description: 인증 필요 }
+ */
+router.patch('/me', authRequired, validateBody(updateProfileSchema), updateProfile);
+
+/**
+ * @openapi
+ * /auth/password:
+ *   patch:
+ *     tags: [Auth]
+ *     summary: 비밀번호 변경
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [currentPassword, newPassword]
+ *             properties:
+ *               currentPassword: { type: string }
+ *               newPassword: { type: string, minLength: 8 }
+ *     responses:
+ *       200: { description: 변경 성공 }
+ *       400: { description: 잘못된 요청 }
+ *       401: { description: 인증 필요 }
+ */
+router.patch('/password', authRequired, validateBody(changePasswordSchema), changePassword);
+
+/**
+ * @openapi
+ * /auth/profile-image:
+ *   post:
+ *     tags: [Auth]
+ *     summary: 프로필 이미지 업로드
+ *     security: [{ bearerAuth: [] }]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         multipart/form-data:
+ *           schema:
+ *             type: object
+ *             required: [image]
+ *             properties:
+ *               image: { type: string, format: binary }
+ *     responses:
+ *       200: { description: 업로드 성공 }
+ *       400: { description: 잘못된 파일 }
+ *       401: { description: 인증 필요 }
+ */
+router.post(
+  '/profile-image',
+  authRequired,
+  avatarUpload.single('image'),
+  uploadProfileImage,
+);
 
 export default router;
