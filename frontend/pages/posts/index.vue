@@ -8,7 +8,6 @@ const auth = useAuthStore();
 
 const page = computed(() => Number(route.query.page) || 1);
 const search = ref((route.query.search as string) || '');
-const avatarError = ref('');
 
 const { data, pending } = await useAsyncData(
   'posts',
@@ -30,10 +29,6 @@ function onSearch() {
 function goWrite() {
   navigateTo('/posts/new');
 }
-
-function onAvatarError(message: string) {
-  avatarError.value = message;
-}
 </script>
 
 <template>
@@ -51,15 +46,12 @@ function onAvatarError(message: string) {
         :email="auth.user?.email"
         :nickname="auth.user?.nickname"
         :profile-image="auth.user?.profileImage"
-        editable
-        @error="onAvatarError"
       />
       <button type="button" class="compose-prompt" @click="goWrite">
         어떤 작업을 하고 있나요?
       </button>
       <button type="button" class="btn compose-write-btn" @click="goWrite">글쓰기</button>
     </div>
-    <p v-if="avatarError" class="error" style="margin: -8px 0 16px">{{ avatarError }}</p>
 
     <div class="section-header">
       <h2 class="section-title">최근 게시글</h2>
