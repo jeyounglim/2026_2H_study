@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import {
   listPosts,
+  listPopularPosts,
   getPost,
   createPost,
   updatePost,
@@ -9,7 +10,8 @@ import {
 import { listComments, createComment } from '../controllers/commentController.js';
 import { authRequired } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
-import { postSchema, commentSchema } from '../validators/schemas.js';
+import { thumbnailUpload } from '../middleware/upload.js';
+import { commentSchema } from '../validators/schemas.js';
 
 const router = Router();
 
@@ -33,6 +35,21 @@ const router = Router();
  *       200: { description: 게시글 목록 + pagination }
  */
 router.get('/', listPosts);
+
+/**
+ * @openapi
+ * /posts/popular:
+ *   get:
+ *     tags: [Posts]
+ *     summary: 인기 게시글 조회 (댓글 수 기준)
+ *     parameters:
+ *       - in: query
+ *         name: limit
+ *         schema: { type: integer, default: 5 }
+ *     responses:
+ *       200: { description: 인기 게시글 목록 }
+ */
+router.get('/popular', listPopularPosts);
 
 /**
  * @openapi
@@ -72,7 +89,7 @@ router.get('/:id', getPost);
  *       201: { description: 작성됨 }
  *       401: { description: 인증 필요 }
  */
-router.post('/', authRequired, validateBody(postSchema), createPost);
+router.post('/', authRequired, thumbnailUpload.single('thumbnail'), createPost);
 
 /**
  * @openapi
@@ -100,7 +117,7 @@ router.post('/', authRequired, validateBody(postSchema), createPost);
  *       200: { description: 수정됨 }
  *       403: { description: 권한 없음 }
  */
-router.put('/:id', authRequired, validateBody(postSchema), updatePost);
+router.put('/:id', authRequired, thumbnailUpload.single('thumbnail'), updatePost);
 
 /**
  * @openapi
