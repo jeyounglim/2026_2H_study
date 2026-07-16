@@ -15,8 +15,12 @@ export const loginSchema = z.object({
 });
 
 export const postSchema = z.object({
-  title: z.string().min(1, '제목을 입력하세요.').max(255),
-  content: z.string().min(1, '내용을 입력하세요.'),
+  title: z
+    .string()
+    .trim()
+    .min(1, '제목을 입력하세요.')
+    .max(255, '제목은 최대 255자까지 가능합니다.'),
+  content: z.string().trim().min(1, '내용을 입력하세요.'),
 });
 
 export const commentSchema = z.object({

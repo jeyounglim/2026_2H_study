@@ -1,5 +1,6 @@
 <script setup lang="ts">
 import type { Post } from '~/types';
+import { getApiErrorMessage } from '~/utils/apiError';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -18,8 +19,8 @@ async function onSubmit() {
       body: { title: title.value, content: content.value },
     });
     await navigateTo(`/posts/${res.data.id}`);
-  } catch (e: any) {
-    error.value = e?.data?.message || '작성에 실패했습니다.';
+  } catch (e: unknown) {
+    error.value = getApiErrorMessage(e, '작성에 실패했습니다.');
   } finally {
     loading.value = false;
   }
@@ -33,7 +34,14 @@ async function onSubmit() {
     <form @submit.prevent="onSubmit">
       <div class="field">
         <label>제목</label>
-        <input v-model="title" class="input" placeholder="제목을 입력하세요" required />
+        <input
+          v-model="title"
+          class="input"
+          placeholder="제목을 입력하세요"
+          required
+          maxlength="255"
+        />
+        <p class="muted" style="margin-top: 6px; font-size: 13px">최대 255자</p>
       </div>
       <div class="field">
         <label>내용</label>
