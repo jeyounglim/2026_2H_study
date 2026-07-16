@@ -29,6 +29,7 @@ model Post {
   id        Int      @id @default(autoincrement())
   title     String   @db.VarChar(255)
   content   String   @db.Text
+  thumbnail String?  @db.VarChar(512)
   authorId  Int
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

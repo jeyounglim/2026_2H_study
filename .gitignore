@@ -42,3 +42,5 @@ coverage/
 # uploaded files
 backend/uploads/avatars/*
 !backend/uploads/avatars/.gitkeep
+backend/uploads/thumbnails/*
+!backend/uploads/thumbnails/.gitkeep

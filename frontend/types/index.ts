@@ -8,6 +8,7 @@ export interface Post {
   id: number;
   title: string;
   content: string;
+  thumbnail?: string | null;
   authorId: number;
   author: Author;
   createdAt: string;

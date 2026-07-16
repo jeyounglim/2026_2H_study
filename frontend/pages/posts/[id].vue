@@ -4,6 +4,7 @@ import type { Comment, Post } from '~/types';
 const route = useRoute();
 const api = useApi();
 const auth = useAuthStore();
+const mediaUrl = useMediaUrl();
 const postId = computed(() => Number(route.params.id));
 
 const { data: postRes, error } = await useAsyncData(`post-${postId.value}`, () =>
@@ -143,6 +144,12 @@ async function removePost() {
 
     <template v-else-if="post">
       <article class="article-detail">
+        <img
+          v-if="post.thumbnail"
+          :src="mediaUrl(post.thumbnail) || ''"
+          :alt="post.title"
+          class="article-detail-thumbnail"
+        />
         <header class="article-detail-header">
           <h1 class="article-detail-title">{{ post.title }}</h1>
           <div class="article-detail-meta">

@@ -1,12 +1,11 @@
 import crypto from 'node:crypto';
-import fs from 'node:fs';
-import path from 'node:path';
 import bcrypt from 'bcryptjs';
 import { prisma } from '../lib/prisma.js';
 import { signAccessToken } from '../lib/jwt.js';
 import { sendVerificationEmail } from '../lib/mailer.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { badRequest, conflict, notFound, unauthorized } from '../utils/ApiError.js';
+import { removeLocalUpload } from '../middleware/upload.js';
 
 const publicUser = (user) => ({
   id: user.id,
@@ -16,12 +15,6 @@ const publicUser = (user) => ({
   isVerified: user.isVerified,
   createdAt: user.createdAt,
 });
-
-function removeLocalUpload(fileUrl) {
-  if (!fileUrl || !fileUrl.startsWith('/uploads/')) return;
-  const absolute = path.resolve(`.${fileUrl}`);
-  fs.promises.unlink(absolute).catch(() => {});
-}
 
 // POST /auth/register
 export const register = asyncHandler(async (req, res) => {
