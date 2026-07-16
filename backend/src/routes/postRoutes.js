@@ -157,6 +157,7 @@ router.get('/:postId/comments', listComments);
  *             required: [content]
  *             properties:
  *               content: { type: string }
+ *               parentId: { type: integer, description: 대댓글일 때 부모 댓글 ID (1단계만) }
  *     responses:
  *       201: { description: 작성됨 }
  *       401: { description: 인증 필요 }

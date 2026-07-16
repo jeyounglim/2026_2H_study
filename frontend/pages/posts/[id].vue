@@ -17,6 +17,9 @@ const { data: commentsRes, refresh: refreshComments } = await useAsyncData(
 
 const post = computed(() => postRes.value?.data);
 const comments = computed(() => commentsRes.value?.data ?? []);
+const commentCount = computed(() =>
+  comments.value.reduce((sum, c) => sum + 1 + (c.replies?.length ?? 0), 0),
+);
 const isAuthor = computed(() => !!post.value && auth.user?.id === post.value.authorId);
 
 const newComment = ref('');
@@ -24,6 +27,10 @@ const commentError = ref('');
 const submitting = ref(false);
 const editingCommentId = ref<number | null>(null);
 const editingContent = ref('');
+const replyToId = ref<number | null>(null);
+const replyContent = ref('');
+const replyError = ref('');
+const replySubmitting = ref(false);
 
 async function addComment() {
   commentError.value = '';
@@ -42,11 +49,47 @@ async function addComment() {
   }
 }
 
-async function removeComment(id: number) {
-  if (!confirm('댓글을 삭제하시겠습니까?')) return;
+function startReply(commentId: number) {
+  replyToId.value = commentId;
+  replyContent.value = '';
+  replyError.value = '';
+  cancelEditComment();
+}
+
+function cancelReply() {
+  replyToId.value = null;
+  replyContent.value = '';
+  replyError.value = '';
+}
+
+async function submitReply() {
+  if (replyToId.value == null || !replyContent.value.trim()) return;
+  replyError.value = '';
+  replySubmitting.value = true;
   try {
-    await api(`/comments/${id}`, { method: 'DELETE' });
-    if (editingCommentId.value === id) cancelEditComment();
+    await api(`/posts/${postId.value}/comments`, {
+      method: 'POST',
+      body: { content: replyContent.value, parentId: replyToId.value },
+    });
+    cancelReply();
+    await refreshComments();
+  } catch (e: any) {
+    replyError.value = e?.data?.message || '답글 작성에 실패했습니다.';
+  } finally {
+    replySubmitting.value = false;
+  }
+}
+
+async function removeComment(comment: Comment) {
+  const hasReplies = (comment.replies?.length ?? 0) > 0;
+  const msg = hasReplies
+    ? '이 댓글과 답글이 함께 삭제됩니다. 계속할까요?'
+    : '댓글을 삭제하시겠습니까?';
+  if (!confirm(msg)) return;
+  try {
+    await api(`/comments/${comment.id}`, { method: 'DELETE' });
+    if (editingCommentId.value === comment.id) cancelEditComment();
+    if (replyToId.value === comment.id) cancelReply();
     await refreshComments();
   } catch (e: any) {
     alert(e?.data?.message || '댓글 삭제에 실패했습니다.');
@@ -56,6 +99,7 @@ async function removeComment(id: number) {
 function startEditComment(comment: Comment) {
   editingCommentId.value = comment.id;
   editingContent.value = comment.content;
+  cancelReply();
 }
 
 function cancelEditComment() {
@@ -113,7 +157,7 @@ async function removePost() {
       </article>
 
       <section class="comments-section">
-        <h2 class="comments-heading">댓글 {{ comments.length }}</h2>
+        <h2 class="comments-heading">댓글 {{ commentCount }}</h2>
 
         <div v-if="auth.isLoggedIn" style="margin-bottom: 24px">
           <textarea
@@ -138,15 +182,24 @@ async function removePost() {
         <div v-for="c in comments" :key="c.id" class="comment">
           <div class="row-between">
             <span class="comment-author">{{ c.author.nickname }}</span>
-            <div v-if="auth.user?.id === c.authorId" class="comment-actions">
+            <div class="comment-actions">
               <button
-                v-if="editingCommentId !== c.id"
+                v-if="auth.isLoggedIn && editingCommentId !== c.id"
                 class="btn btn-sm btn-ghost"
-                @click="startEditComment(c)"
+                @click="startReply(c.id)"
               >
-                수정
+                답글
               </button>
-              <button class="btn btn-sm btn-danger" @click="removeComment(c.id)">삭제</button>
+              <template v-if="auth.user?.id === c.authorId">
+                <button
+                  v-if="editingCommentId !== c.id"
+                  class="btn btn-sm btn-ghost"
+                  @click="startEditComment(c)"
+                >
+                  수정
+                </button>
+                <button class="btn btn-sm btn-danger" @click="removeComment(c)">삭제</button>
+              </template>
             </div>
           </div>
           <div v-if="editingCommentId === c.id" style="margin-top: 12px">
@@ -162,6 +215,63 @@ async function removePost() {
             <div class="comment-body">{{ c.content }}</div>
             <div class="comment-date">{{ formatDate(c.createdAt) }}</div>
           </template>
+
+          <div v-if="replyToId === c.id" class="reply-form">
+            <textarea
+              v-model="replyContent"
+              class="textarea"
+              style="min-height: 60px"
+              :placeholder="`${c.author.nickname}님에게 답글`"
+            />
+            <div class="row-between" style="margin-top: 8px">
+              <span class="error">{{ replyError }}</span>
+              <div style="display: flex; gap: 8px">
+                <button class="btn btn-sm btn-ghost" @click="cancelReply">취소</button>
+                <button
+                  class="btn btn-sm"
+                  :disabled="replySubmitting || !replyContent.trim()"
+                  @click="submitReply"
+                >
+                  답글 작성
+                </button>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="c.replies?.length" class="comment-replies">
+            <div v-for="r in c.replies" :key="r.id" class="comment comment-reply">
+              <div class="row-between">
+                <span class="comment-author">{{ r.author.nickname }}</span>
+                <div v-if="auth.user?.id === r.authorId" class="comment-actions">
+                  <button
+                    v-if="editingCommentId !== r.id"
+                    class="btn btn-sm btn-ghost"
+                    @click="startEditComment(r)"
+                  >
+                    수정
+                  </button>
+                  <button class="btn btn-sm btn-danger" @click="removeComment(r)">삭제</button>
+                </div>
+              </div>
+              <div v-if="editingCommentId === r.id" style="margin-top: 12px">
+                <textarea v-model="editingContent" class="textarea" style="min-height: 60px" />
+                <div style="display: flex; gap: 8px; margin-top: 8px; justify-content: flex-end">
+                  <button class="btn btn-sm btn-ghost" @click="cancelEditComment">취소</button>
+                  <button
+                    class="btn btn-sm"
+                    :disabled="!editingContent.trim()"
+                    @click="saveEditComment(r.id)"
+                  >
+                    저장
+                  </button>
+                </div>
+              </div>
+              <template v-else>
+                <div class="comment-body">{{ r.content }}</div>
+                <div class="comment-date">{{ formatDate(r.createdAt) }}</div>
+              </template>
+            </div>
+          </div>
         </div>
       </section>
     </template>
