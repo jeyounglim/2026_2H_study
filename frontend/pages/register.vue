@@ -19,6 +19,17 @@ const verifyPath = computed(() => {
   }
 });
 
+function getRegisterErrorMessage(e: unknown): string {
+  const data = (e as { data?: { message?: string; errors?: { message?: string }[] } })?.data;
+  const fieldMessages = data?.errors
+    ?.map((err) => err.message)
+    .filter((msg): msg is string => !!msg);
+  if (fieldMessages?.length) {
+    return fieldMessages.join(' ');
+  }
+  return data?.message || '회원가입에 실패했습니다.';
+}
+
 async function onSubmit() {
   error.value = '';
   loading.value = true;
@@ -30,8 +41,8 @@ async function onSubmit() {
     });
     done.value = true;
     verifyUrl.value = res.verifyUrl || null;
-  } catch (e: any) {
-    error.value = e?.data?.message || '회원가입에 실패했습니다.';
+  } catch (e: unknown) {
+    error.value = getRegisterErrorMessage(e);
   } finally {
     loading.value = false;
   }
