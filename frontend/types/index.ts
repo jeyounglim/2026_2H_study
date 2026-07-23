@@ -1,7 +1,18 @@
+export type UserLevel = 'JUNIOR' | 'SENIOR';
+
 export interface Author {
   id: number;
   nickname: string;
+  level?: UserLevel | string | null;
   profileImage?: string | null;
+}
+
+export interface PostImage {
+  id: number;
+  postId?: number;
+  url: string;
+  sortOrder: number;
+  createdAt?: string;
 }
 
 export interface Post {
@@ -9,6 +20,7 @@ export interface Post {
   title: string;
   content: string;
   thumbnail?: string | null;
+  images?: PostImage[];
   authorId: number;
   author: Author;
   createdAt: string;
@@ -25,6 +37,8 @@ export interface Comment {
   author: Author;
   createdAt: string;
   updatedAt: string;
+  likeCount?: number;
+  likedByMe?: boolean;
   replies?: Comment[];
 }
 

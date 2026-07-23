@@ -25,7 +25,9 @@ async function onSubmit() {
 <template>
   <div class="auth-card card">
     <h1 class="title" style="text-align: center; margin-bottom: 8px">로그인</h1>
-    <p class="muted" style="text-align: center; margin-bottom: 32px">계정에 로그인하세요.</p>
+    <p class="muted" style="text-align: center; margin-bottom: 32px">
+      Code-Q&amp;A에 로그인하고 질문·답변에 참여하세요.
+    </p>
 
     <form @submit.prevent="onSubmit">
       <div class="field">

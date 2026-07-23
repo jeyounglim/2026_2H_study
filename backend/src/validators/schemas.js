@@ -7,6 +7,9 @@ export const registerSchema = z.object({
     .string()
     .min(2, '닉네임은 최소 2자 이상이어야 합니다.')
     .max(20, '닉네임은 최대 20자까지 가능합니다.'),
+  level: z.enum(['JUNIOR', 'SENIOR'], {
+    errorMap: () => ({ message: '시니어 또는 주니어를 선택하세요.' }),
+  }),
 });
 
 export const loginSchema = z.object({
@@ -33,6 +36,9 @@ export const updateProfileSchema = z.object({
     .string()
     .min(2, '닉네임은 최소 2자 이상이어야 합니다.')
     .max(20, '닉네임은 최대 20자까지 가능합니다.'),
+  level: z.enum(['JUNIOR', 'SENIOR'], {
+    errorMap: () => ({ message: '시니어 또는 주니어를 선택하세요.' }),
+  }),
 });
 
 export const changePasswordSchema = z.object({

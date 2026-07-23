@@ -47,10 +47,10 @@ function goWrite() {
 <template>
   <div>
     <header class="hero">
-      <p class="hero-eyebrow">Board</p>
-      <h1 class="hero-title">Study</h1>
+      <p class="hero-eyebrow">Developer Forum</p>
+      <h1 class="hero-title">Code-Q&amp;A</h1>
       <p class="hero-subtitle">
-        인기 게시글과 최신 업데이트를 확인하세요.
+        개발 중 막힌 점을 질문하고, 답변으로 함께 해결하세요.
       </p>
     </header>
 
@@ -61,19 +61,19 @@ function goWrite() {
         :profile-image="auth.user?.profileImage"
       />
       <button type="button" class="compose-prompt" @click="goWrite">
-        어떤 작업을 하고 있나요?
+        어떤 문제로 막혀 있나요?
       </button>
-      <button type="button" class="btn compose-write-btn" @click="goWrite">글쓰기</button>
+      <button type="button" class="btn compose-write-btn" @click="goWrite">질문하기</button>
     </div>
 
     <section class="board-section">
       <div class="board-section-header">
-        <h2 class="board-section-title">인기 게시글</h2>
-        <p class="board-section-desc">댓글이 많은 게시글 순위입니다.</p>
+        <h2 class="board-section-title">인기 질문</h2>
+        <p class="board-section-desc">답변이 많은 질문 순위입니다.</p>
       </div>
 
       <p v-if="popularPending" class="loading-state">불러오는 중...</p>
-      <p v-else-if="popularPosts.length === 0" class="empty-state">인기 게시글이 없습니다.</p>
+      <p v-else-if="popularPosts.length === 0" class="empty-state">인기 질문이 없습니다.</p>
 
       <ol v-else class="popular-list">
         <li v-for="(post, index) in popularPosts" :key="post.id" class="popular-item">
@@ -86,11 +86,14 @@ function goWrite() {
                   :nickname="post.author.nickname"
                   :profile-image="post.author.profileImage"
                 />
-                <span class="popular-author">{{ post.author.nickname }}</span>
+                <span class="popular-author name-with-flag">
+                  <RoleFlag :level="post.author.level" />
+                  {{ post.author.nickname }}
+                </span>
               </div>
               <h3 class="popular-title">{{ post.title }}</h3>
             </div>
-            <span class="popular-vote" title="댓글 수">
+            <span class="popular-vote" title="답변 수">
               <svg class="popular-vote-icon" viewBox="0 0 24 24" aria-hidden="true">
                 <path
                   fill="none"
@@ -111,17 +114,17 @@ function goWrite() {
     <section class="board-section">
       <div class="section-header">
         <div>
-          <h2 class="board-section-title">최근 게시글</h2>
-          <p class="board-section-desc">최신순으로 정렬된 게시글입니다.</p>
+          <h2 class="board-section-title">최신 질문</h2>
+          <p class="board-section-desc">최근에 올라온 개발 질문입니다.</p>
         </div>
         <form class="search-form" @submit.prevent="onSearch">
-          <input v-model="search" class="search-input" placeholder="검색" />
+          <input v-model="search" class="search-input" placeholder="질문 검색" />
           <button class="btn btn-sm btn-outline" type="submit">검색</button>
         </form>
       </div>
 
       <p v-if="pending" class="loading-state">불러오는 중...</p>
-      <p v-else-if="recentPosts.length === 0" class="empty-state">게시글이 없습니다.</p>
+      <p v-else-if="recentPosts.length === 0" class="empty-state">질문이 없습니다. 첫 질문을 남겨보세요.</p>
 
       <template v-else>
         <div v-if="postsWithThumbnail.length" class="magazine-section">
@@ -137,8 +140,11 @@ function goWrite() {
                 <p class="magazine-featured-excerpt">{{ excerptText(featuredPost.content) }}</p>
                 <div class="magazine-card-meta">
                   <span>{{ formatRelativeTime(featuredPost.createdAt) }}</span>
-                  <span>@{{ featuredPost.author.nickname }}</span>
-                  <span>댓글 {{ featuredPost._count?.comments ?? 0 }}</span>
+                  <span class="name-with-flag">
+                    <RoleFlag :level="featuredPost.author.level" />
+                    @{{ featuredPost.author.nickname }}
+                  </span>
+                  <span>답변 {{ featuredPost._count?.comments ?? 0 }}</span>
                 </div>
               </div>
             </NuxtLink>
@@ -153,7 +159,10 @@ function goWrite() {
                   <p class="magazine-card-excerpt">{{ excerptText(post.content) }}</p>
                   <div class="magazine-card-meta">
                     <span>{{ formatRelativeTime(post.createdAt) }}</span>
-                    <span>@{{ post.author.nickname }}</span>
+                    <span class="name-with-flag">
+                      <RoleFlag :level="post.author.level" />
+                      @{{ post.author.nickname }}
+                    </span>
                   </div>
                 </div>
               </NuxtLink>
@@ -178,7 +187,10 @@ function goWrite() {
                     />
                   </svg>
                   <span>{{ formatRelativeTime(post.createdAt) }}</span>
-                  <span class="recent-author">@{{ post.author.nickname }}</span>
+                  <span class="recent-author name-with-flag">
+                    <RoleFlag :level="post.author.level" />
+                    @{{ post.author.nickname }}
+                  </span>
                 </div>
               </div>
               <UserAvatar

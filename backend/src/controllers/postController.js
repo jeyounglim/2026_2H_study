@@ -1,14 +1,20 @@
 import { prisma } from '../lib/prisma.js';
 import { asyncHandler } from '../utils/asyncHandler.js';
 import { forbidden, notFound } from '../utils/ApiError.js';
-import { removeLocalUpload } from '../middleware/upload.js';
+import { removeLocalUpload, uploadedPath } from '../middleware/upload.js';
 import { postSchema } from '../validators/schemas.js';
 
-const authorSelect = { id: true, nickname: true, profileImage: true };
+const authorSelect = { id: true, nickname: true, profileImage: true, level: true };
 
 const postInclude = {
   author: { select: authorSelect },
+  images: { orderBy: { sortOrder: 'asc' } },
   _count: { select: { comments: true } },
+};
+
+const detailInclude = {
+  author: { select: authorSelect },
+  images: { orderBy: { sortOrder: 'asc' } },
 };
 
 function parsePostFields(body) {
@@ -16,6 +22,19 @@ function parsePostFields(body) {
     title: body.title,
     content: body.content,
   });
+}
+
+function getUploadedFiles(req) {
+  const files = req.files || {};
+  const thumbnailFile = Array.isArray(files.thumbnail) ? files.thumbnail[0] : null;
+  const imageFiles = Array.isArray(files.images) ? files.images : [];
+  return { thumbnailFile, imageFiles };
+}
+
+function cleanupUploaded(req) {
+  const { thumbnailFile, imageFiles } = getUploadedFiles(req);
+  if (thumbnailFile) removeLocalUpload(uploadedPath(thumbnailFile));
+  imageFiles.forEach((file) => removeLocalUpload(uploadedPath(file)));
 }
 
 // GET /posts?page=1&limit=10  (페이징)
@@ -73,7 +92,7 @@ export const getPost = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const post = await prisma.post.findUnique({
     where: { id },
-    include: { author: { select: authorSelect } },
+    include: detailInclude,
   });
   if (!post) {
     throw notFound('게시글을 찾을 수 없습니다.');
@@ -85,15 +104,28 @@ export const getPost = asyncHandler(async (req, res) => {
 export const createPost = asyncHandler(async (req, res) => {
   const parsed = parsePostFields(req.body);
   if (!parsed.success) {
+    cleanupUploaded(req);
     throw parsed.error;
   }
 
   const { title, content } = parsed.data;
-  const thumbnail = req.file ? `/uploads/thumbnails/${req.file.filename}` : null;
+  const { thumbnailFile, imageFiles } = getUploadedFiles(req);
+  const thumbnail = thumbnailFile ? uploadedPath(thumbnailFile) : null;
 
   const post = await prisma.post.create({
-    data: { title, content, thumbnail, authorId: req.user.id },
-    include: { author: { select: authorSelect } },
+    data: {
+      title,
+      content,
+      thumbnail,
+      authorId: req.user.id,
+      images: {
+        create: imageFiles.map((file, index) => ({
+          url: uploadedPath(file),
+          sortOrder: index,
+        })),
+      },
+    },
+    include: detailInclude,
   });
   res.status(201).json({ message: '게시글이 작성되었습니다.', data: post });
 });
@@ -103,33 +135,64 @@ export const updatePost = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
   const parsed = parsePostFields(req.body);
   if (!parsed.success) {
+    cleanupUploaded(req);
     throw parsed.error;
   }
 
   const { title, content } = parsed.data;
+  const { thumbnailFile, imageFiles } = getUploadedFiles(req);
 
-  const existing = await prisma.post.findUnique({ where: { id } });
+  const existing = await prisma.post.findUnique({
+    where: { id },
+    include: { images: true },
+  });
   if (!existing) {
-    if (req.file) removeLocalUpload(`/uploads/thumbnails/${req.file.filename}`);
+    cleanupUploaded(req);
     throw notFound('게시글을 찾을 수 없습니다.');
   }
   if (existing.authorId !== req.user.id) {
-    if (req.file) removeLocalUpload(`/uploads/thumbnails/${req.file.filename}`);
+    cleanupUploaded(req);
     throw forbidden('본인이 작성한 글만 수정할 수 있습니다.');
   }
 
-  const thumbnail = req.file
-    ? `/uploads/thumbnails/${req.file.filename}`
-    : existing.thumbnail;
+  const thumbnail = thumbnailFile ? uploadedPath(thumbnailFile) : existing.thumbnail;
+  const replaceImages = String(req.body.replaceImages || '') === 'true';
 
-  const post = await prisma.post.update({
-    where: { id },
-    data: { title, content, thumbnail },
-    include: { author: { select: authorSelect } },
+  const post = await prisma.$transaction(async (tx) => {
+    if (replaceImages) {
+      await tx.postImage.deleteMany({ where: { postId: id } });
+      if (imageFiles.length) {
+        await tx.postImage.createMany({
+          data: imageFiles.map((file, index) => ({
+            postId: id,
+            url: uploadedPath(file),
+            sortOrder: index,
+          })),
+        });
+      }
+    } else if (imageFiles.length) {
+      const startOrder = existing.images.length;
+      await tx.postImage.createMany({
+        data: imageFiles.map((file, index) => ({
+          postId: id,
+          url: uploadedPath(file),
+          sortOrder: startOrder + index,
+        })),
+      });
+    }
+
+    return tx.post.update({
+      where: { id },
+      data: { title, content, thumbnail },
+      include: detailInclude,
+    });
   });
 
-  if (req.file && existing.thumbnail && existing.thumbnail !== thumbnail) {
+  if (thumbnailFile && existing.thumbnail && existing.thumbnail !== thumbnail) {
     removeLocalUpload(existing.thumbnail);
+  }
+  if (replaceImages) {
+    existing.images.forEach((image) => removeLocalUpload(image.url));
   }
 
   res.json({ message: '게시글이 수정되었습니다.', data: post });
@@ -139,7 +202,10 @@ export const updatePost = asyncHandler(async (req, res) => {
 export const deletePost = asyncHandler(async (req, res) => {
   const id = Number(req.params.id);
 
-  const existing = await prisma.post.findUnique({ where: { id } });
+  const existing = await prisma.post.findUnique({
+    where: { id },
+    include: { images: true },
+  });
   if (!existing) {
     throw notFound('게시글을 찾을 수 없습니다.');
   }
@@ -148,8 +214,7 @@ export const deletePost = asyncHandler(async (req, res) => {
   }
 
   await prisma.post.delete({ where: { id } });
-  if (existing.thumbnail) {
-    removeLocalUpload(existing.thumbnail);
-  }
+  if (existing.thumbnail) removeLocalUpload(existing.thumbnail);
+  existing.images.forEach((image) => removeLocalUpload(image.url));
   res.json({ message: '게시글이 삭제되었습니다.' });
 });

@@ -16,9 +16,9 @@ async function handleLogout() {
   <div class="page">
     <header class="navbar">
       <div class="navbar-inner">
-        <NuxtLink to="/posts" class="brand">Study</NuxtLink>
+        <NuxtLink to="/posts" class="brand">Code-Q&amp;A</NuxtLink>
         <nav class="nav-links">
-          <NuxtLink to="/posts" class="nav-link">게시판</NuxtLink>
+          <NuxtLink to="/posts" class="nav-link">질문</NuxtLink>
           <template v-if="auth.isLoggedIn">
             <NuxtLink to="/mypage" class="nav-avatar-link" title="마이페이지">
               <UserAvatar
@@ -46,9 +46,9 @@ async function handleLogout() {
 
     <footer class="footer">
       <div class="footer-inner">
-        <span class="footer-text">Copyright © 2026 Board Study. All rights reserved.</span>
+        <span class="footer-text">Copyright © 2026 Code-Q&amp;A. All rights reserved.</span>
         <div class="footer-links">
-          <NuxtLink to="/posts" class="footer-link">게시판</NuxtLink>
+          <NuxtLink to="/posts" class="footer-link">질문 목록</NuxtLink>
           <a :href="swaggerUrl" target="_blank" rel="noopener" class="footer-link">API 문서</a>
         </div>
       </div>

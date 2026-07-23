@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import type { Paginated, Post } from '~/types';
+import type { Paginated, Post, UserLevel } from '~/types';
 
 definePageMeta({ middleware: 'auth' });
 
@@ -7,6 +7,7 @@ const auth = useAuthStore();
 const api = useApi();
 
 const nickname = ref(auth.user?.nickname || '');
+const level = ref<UserLevel>((auth.user?.level as UserLevel) || 'JUNIOR');
 const profileError = ref('');
 const profileSuccess = ref('');
 const profileLoading = ref(false);
@@ -20,9 +21,10 @@ const passwordSuccess = ref('');
 const passwordLoading = ref(false);
 
 watch(
-  () => auth.user?.nickname,
+  () => auth.user,
   (value) => {
-    if (value) nickname.value = value;
+    if (value?.nickname) nickname.value = value.nickname;
+    if (value?.level === 'SENIOR' || value?.level === 'JUNIOR') level.value = value.level;
   },
 );
 
@@ -44,8 +46,8 @@ async function saveProfile() {
   profileSuccess.value = '';
   profileLoading.value = true;
   try {
-    await auth.updateProfile(nickname.value.trim());
-    profileSuccess.value = '닉네임이 저장되었습니다.';
+    await auth.updateProfile(nickname.value.trim(), level.value);
+    profileSuccess.value = '프로필이 저장되었습니다.';
   } catch (e: any) {
     const fieldMsg = e?.data?.errors?.map((err: { message: string }) => err.message).join(' ');
     profileError.value = fieldMsg || e?.data?.message || '프로필 저장에 실패했습니다.';
@@ -89,10 +91,10 @@ function onAvatarUploaded() {
 
 <template>
   <div class="mypage">
-    <NuxtLink to="/posts" class="back-link">← 게시판</NuxtLink>
+    <NuxtLink to="/posts" class="back-link">← 질문 목록</NuxtLink>
     <h1 class="title">마이페이지</h1>
     <p class="muted" style="margin-top: -8px; margin-bottom: 28px">
-      프로필과 계정 정보를 관리하세요.
+      Code-Q&amp;A 프로필과 계정 정보를 관리하세요.
     </p>
 
     <section class="mypage-card card">
@@ -107,7 +109,10 @@ function onAvatarUploaded() {
           @error="onAvatarError"
         />
         <div class="mypage-profile-meta">
-          <p class="mypage-name">{{ auth.user?.nickname }}</p>
+          <p class="mypage-name">
+            <RoleFlag :level="auth.user?.level" />
+            {{ auth.user?.nickname }}
+          </p>
           <p class="muted">{{ auth.user?.email }}</p>
           <p class="muted" style="margin-top: 4px">
             가입일 {{ auth.user?.createdAt ? formatDate(auth.user.createdAt) : '-' }}
@@ -137,6 +142,21 @@ function onAvatarUploaded() {
             minlength="2"
             maxlength="20"
           />
+        </div>
+        <div class="field">
+          <label>구분</label>
+          <div class="level-options">
+            <label class="level-option" :class="{ active: level === 'JUNIOR' }">
+              <input v-model="level" type="radio" value="JUNIOR" required />
+              <span class="level-option-title">주니어</span>
+              <span class="muted">질문하며 성장하는 개발자</span>
+            </label>
+            <label class="level-option" :class="{ active: level === 'SENIOR' }">
+              <input v-model="level" type="radio" value="SENIOR" required />
+              <span class="level-option-title">시니어</span>
+              <span class="muted">답변으로 도움을 주는 개발자</span>
+            </label>
+          </div>
         </div>
         <div class="row-between">
           <span class="success">{{ profileSuccess }}</span>
@@ -182,13 +202,13 @@ function onAvatarUploaded() {
 
     <section class="mypage-card card">
       <div class="row-between" style="margin-bottom: 16px">
-        <h2 class="mypage-section-title" style="margin: 0">내가 쓴 글</h2>
+        <h2 class="mypage-section-title" style="margin: 0">내가 올린 질문</h2>
         <span class="muted" style="font-size: 13px">
           최근 {{ myPosts.length }}개
         </span>
       </div>
       <p v-if="postsPending" class="muted">불러오는 중...</p>
-      <p v-else-if="myPosts.length === 0" class="muted">작성한 게시글이 없습니다.</p>
+      <p v-else-if="myPosts.length === 0" class="muted">작성한 질문이 없습니다.</p>
       <ul v-else class="mypage-posts">
         <li v-for="post in myPosts" :key="post.id">
           <NuxtLink :to="`/posts/${post.id}`" class="mypage-post-link">

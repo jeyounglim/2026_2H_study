@@ -11,6 +11,7 @@ const publicUser = (user) => ({
   id: user.id,
   email: user.email,
   nickname: user.nickname,
+  level: user.level,
   profileImage: user.profileImage,
   isVerified: user.isVerified,
   createdAt: user.createdAt,
@@ -18,7 +19,7 @@ const publicUser = (user) => ({
 
 // POST /auth/register
 export const register = asyncHandler(async (req, res) => {
-  const { email, password, nickname } = req.body;
+  const { email, password, nickname, level } = req.body;
 
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) {
@@ -30,7 +31,14 @@ export const register = asyncHandler(async (req, res) => {
   const verifyTokenExpiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24h
 
   const user = await prisma.user.create({
-    data: { email, password: hashed, nickname, verifyToken, verifyTokenExpiry },
+    data: {
+      email,
+      password: hashed,
+      nickname,
+      level,
+      verifyToken,
+      verifyTokenExpiry,
+    },
   });
 
   const { delivered, verifyUrl } = await sendVerificationEmail(email, verifyToken);
@@ -128,11 +136,11 @@ export const uploadProfileImage = asyncHandler(async (req, res) => {
 
 // PATCH /auth/me  (닉네임 수정)
 export const updateProfile = asyncHandler(async (req, res) => {
-  const { nickname } = req.body;
+  const { nickname, level } = req.body;
 
   const user = await prisma.user.update({
     where: { id: req.user.id },
-    data: { nickname },
+    data: { nickname, level },
   });
 
   res.json({ message: '프로필이 수정되었습니다.', user: publicUser(user) });

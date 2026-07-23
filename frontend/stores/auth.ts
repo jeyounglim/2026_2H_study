@@ -1,9 +1,11 @@
 import { defineStore } from 'pinia';
+import type { UserLevel } from '~/types';
 
 export interface AuthUser {
   id: number;
   email: string;
   nickname: string;
+  level?: UserLevel | string | null;
   profileImage?: string | null;
   isVerified: boolean;
   createdAt: string;
@@ -30,7 +32,12 @@ export const useAuthStore = defineStore('auth', () => {
     return res;
   }
 
-  async function register(payload: { email: string; password: string; nickname: string }) {
+  async function register(payload: {
+    email: string;
+    password: string;
+    nickname: string;
+    level: UserLevel;
+  }) {
     const api = useApi();
     return api<{ message: string; emailDelivered: boolean; verifyUrl?: string }>(
       '/auth/register',
@@ -65,11 +72,11 @@ export const useAuthStore = defineStore('auth', () => {
     return res;
   }
 
-  async function updateProfile(nickname: string) {
+  async function updateProfile(nickname: string, level: UserLevel) {
     const api = useApi();
     const res = await api<{ message: string; user: AuthUser }>('/auth/me', {
       method: 'PATCH',
-      body: { nickname },
+      body: { nickname, level },
     });
     user.value = res.user;
     return res;

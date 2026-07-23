@@ -8,9 +8,9 @@ import {
   deletePost,
 } from '../controllers/postController.js';
 import { listComments, createComment } from '../controllers/commentController.js';
-import { authRequired } from '../middleware/auth.js';
+import { authRequired, authOptional } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
-import { thumbnailUpload } from '../middleware/upload.js';
+import { postMediaUpload } from '../middleware/upload.js';
 import { commentSchema } from '../validators/schemas.js';
 
 const router = Router();
@@ -89,7 +89,7 @@ router.get('/:id', getPost);
  *       201: { description: 작성됨 }
  *       401: { description: 인증 필요 }
  */
-router.post('/', authRequired, thumbnailUpload.single('thumbnail'), createPost);
+router.post('/', authRequired, postMediaUpload, createPost);
 
 /**
  * @openapi
@@ -117,7 +117,7 @@ router.post('/', authRequired, thumbnailUpload.single('thumbnail'), createPost);
  *       200: { description: 수정됨 }
  *       403: { description: 권한 없음 }
  */
-router.put('/:id', authRequired, thumbnailUpload.single('thumbnail'), updatePost);
+router.put('/:id', authRequired, postMediaUpload, updatePost);
 
 /**
  * @openapi
@@ -151,7 +151,7 @@ router.delete('/:id', authRequired, deletePost);
  *     responses:
  *       200: { description: 댓글 목록 }
  */
-router.get('/:postId/comments', listComments);
+router.get('/:postId/comments', authOptional, listComments);
 
 /**
  * @openapi

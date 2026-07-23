@@ -1,5 +1,9 @@
 import { Router } from 'express';
-import { deleteComment, updateComment } from '../controllers/commentController.js';
+import {
+  deleteComment,
+  toggleCommentLike,
+  updateComment,
+} from '../controllers/commentController.js';
 import { authRequired } from '../middleware/auth.js';
 import { validateBody } from '../middleware/validate.js';
 import { commentSchema } from '../validators/schemas.js';
@@ -32,6 +36,24 @@ const router = Router();
  *       403: { description: 권한 없음 }
  */
 router.put('/:id', authRequired, validateBody(commentSchema), updateComment);
+
+/**
+ * @openapi
+ * /comments/{id}/like:
+ *   post:
+ *     tags: [Comments]
+ *     summary: 댓글 추천 토글
+ *     security: [{ bearerAuth: [] }]
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema: { type: integer }
+ *     responses:
+ *       200: { description: 추천/취소 결과 }
+ *       401: { description: 인증 필요 }
+ */
+router.post('/:id/like', authRequired, toggleCommentLike);
 
 /**
  * @openapi

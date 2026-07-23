@@ -1,9 +1,12 @@
 <script setup lang="ts">
+import type { UserLevel } from '~/types';
+
 const auth = useAuthStore();
 
 const email = ref('');
 const password = ref('');
 const nickname = ref('');
+const level = ref<UserLevel>('JUNIOR');
 const error = ref('');
 const loading = ref(false);
 const done = ref(false);
@@ -38,6 +41,7 @@ async function onSubmit() {
       email: email.value,
       password: password.value,
       nickname: nickname.value,
+      level: level.value,
     });
     done.value = true;
     verifyUrl.value = res.verifyUrl || null;
@@ -52,7 +56,9 @@ async function onSubmit() {
 <template>
   <div class="auth-card card">
     <h1 class="title" style="text-align: center; margin-bottom: 8px">회원가입</h1>
-    <p class="muted" style="text-align: center; margin-bottom: 32px">새 계정을 만드세요.</p>
+    <p class="muted" style="text-align: center; margin-bottom: 32px">
+      Code-Q&amp;A에 가입하고 개발 질문에 참여하세요.
+    </p>
 
     <div v-if="done" class="stack">
       <p class="success" style="text-align: center">회원가입이 완료되었습니다. 이메일 인증 후 로그인해주세요.</p>
@@ -71,6 +77,21 @@ async function onSubmit() {
       <div class="field">
         <label>닉네임</label>
         <input v-model="nickname" type="text" class="input" placeholder="닉네임 (2~20자)" required />
+      </div>
+      <div class="field">
+        <label>구분</label>
+        <div class="level-options">
+          <label class="level-option" :class="{ active: level === 'JUNIOR' }">
+            <input v-model="level" type="radio" value="JUNIOR" required />
+            <span class="level-option-title">주니어</span>
+            <span class="muted">질문하며 성장하는 개발자</span>
+          </label>
+          <label class="level-option" :class="{ active: level === 'SENIOR' }">
+            <input v-model="level" type="radio" value="SENIOR" required />
+            <span class="level-option-title">시니어</span>
+            <span class="muted">답변으로 도움을 주는 개발자</span>
+          </label>
+        </div>
       </div>
       <div class="field">
         <label>비밀번호</label>

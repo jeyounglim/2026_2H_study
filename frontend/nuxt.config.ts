@@ -14,11 +14,14 @@ export default defineNuxtConfig({
   },
   app: {
     head: {
-      title: 'Newsroom — Board Study',
+      title: 'Code-Q&A — 개발 질의응답 포럼',
       meta: [
         { charset: 'utf-8' },
         { name: 'viewport', content: 'width=device-width, initial-scale=1' },
-        { name: 'description', content: '최신 게시글과 업데이트를 확인하세요.' },
+        {
+          name: 'description',
+          content: '프로젝트 중 막힌 점을 질문하고, 답변으로 함께 해결하는 Code-Q&A 포럼입니다.',
+        },
       ],
       link: [
         { rel: 'preconnect', href: 'https://cdn.jsdelivr.net', crossorigin: '' },

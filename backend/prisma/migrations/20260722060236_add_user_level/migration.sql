@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE `users` ADD COLUMN `level` VARCHAR(20) NOT NULL DEFAULT 'JUNIOR';
